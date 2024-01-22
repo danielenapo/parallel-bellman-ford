@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <omp.h>
+
 
 #define INFINITY 99999
 
@@ -21,7 +23,8 @@ typedef struct Graph {
   struct Edge *edge;  //array of edges
 }Graph;
 
-//graph generator
+
+// ------------------------ CREATE GRAPH -------------------------- //
 Graph* createGraph(int V) {
     Graph* graph = (Graph*) malloc(sizeof(Graph));
     graph->V = V;
@@ -47,23 +50,25 @@ void generateRandomGraph(Graph* graph) {
 void bellmanford(struct Graph *g, int source);
 void display(int arr[], int size);
 
+// ----------------------- MAIN --------------------------//
 int main(void) {
     //create random graph
     int totalVertices = 4; // Set the total number of vertices
-
-    // Create graph
     Graph* g = createGraph(totalVertices);
-
-    // Generate random graph
     generateRandomGraph(g);
 
+    //run algorithm
+    double tstart, tstop;
+    tstart = omp_get_wtime();
     bellmanford(g, 0);  //0 is the source vertex
+    tstop = omp_get_wtime();
 
+    printf("Elapsed time %f\n", tstop - tstart);
     return 0;
 }
 
 
-
+// ------------------------- ALGORITHM --------------------//
 void bellmanford(struct Graph *g, int source) {
   //variables
   int i, j, u, v, w;
@@ -91,13 +96,14 @@ void bellmanford(struct Graph *g, int source) {
   //mark the source vertex
   d[source] = 0;
 
+  //PART TO PARALLELIZE!!
   //step 2: relax edges |V| - 1 times
   for (i = 1; i <= tV - 1; i++) {
     for (j = 0; j < tE; j++) {
       //get the edge data
-      u = g->edge[j].u;
-      v = g->edge[j].v;
-      w = g->edge[j].w;
+      u = g->edge[j].u; //start
+      v = g->edge[j].v; //end
+      w = g->edge[j].w; //weight
 
       if (d[u] != INFINITY && d[v] > d[u] + w) {
         d[v] = d[u] + w;
