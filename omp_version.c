@@ -53,9 +53,51 @@ void display(int arr[], int size);
 // ----------------------- MAIN --------------------------//
 int main(void) {
     //create random graph
-    int totalVertices = 4; // Set the total number of vertices
-    Graph* g = createGraph(totalVertices);
-    generateRandomGraph(g);
+    //int totalVertices = 4; // Set the total number of vertices
+    //Graph* g = createGraph(totalVertices);
+    //generateRandomGraph(g);
+    //create graph
+    struct Graph *g = (struct Graph *)malloc(sizeof(struct Graph));
+    g->V = 4;  //total vertices
+    g->E = 5;  //total edges
+    //array of edges for graph
+    g->edge = (struct Edge *)malloc(g->E * sizeof(struct Edge));
+
+    //------- adding the edges of the graph
+    /*
+      edge(u, v)
+      where 	u = start vertex of the edge (u,v)
+          v = end vertex of the edge (u,v)
+      
+      w is the weight of the edge (u,v)
+    */
+
+
+    //edge 0 --> 1
+    g->edge[0].u = 0;
+    g->edge[0].v = 1;
+    g->edge[0].w = 5;
+
+    //edge 0 --> 2
+    g->edge[1].u = 0;
+    g->edge[1].v = 2;
+    g->edge[1].w = 4;
+
+    //edge 1 --> 3
+    g->edge[2].u = 1;
+    g->edge[2].v = 3;
+    g->edge[2].w = 3;
+
+    //edge 2 --> 1
+    g->edge[3].u = 2;
+    g->edge[3].v = 1;
+    g->edge[3].w = 6;
+
+    //edge 3 --> 2
+    g->edge[4].u = 3;
+    g->edge[4].v = 2;
+    g->edge[4].w = 2;
+
 
     //run algorithm
     double tstart, tstop;
@@ -88,6 +130,7 @@ void bellmanford(struct Graph *g, int source) {
   int p[tV];
 
   //step 1: fill the distance array and predecessor array
+  #pragma omp parallel for
   for (i = 0; i < tV; i++) {
     d[i] = INFINITY;
     p[i] = 0;
@@ -98,7 +141,8 @@ void bellmanford(struct Graph *g, int source) {
 
   //PART TO PARALLELIZE!!
   //step 2: relax edges |V| - 1 times
-  for (i = 1; i <= tV - 1; i++) {
+  for (i = 1; i <= tV - 1; i++) { 
+    #pragma omp parallel for private(j, u, v, w) shared(d, p)
     for (j = 0; j < tE; j++) {
       //get the edge data
       u = g->edge[j].u; //start
@@ -115,6 +159,7 @@ void bellmanford(struct Graph *g, int source) {
   //step 3: detect negative cycle
   //if value changes then we have a negative cycle in the graph
   //and we cannot find the shortest distances
+  #pragma omp parallel for private(u, v, w)
   for (i = 0; i < tE; i++) {
     u = g->edge[i].u;
     v = g->edge[i].v;
