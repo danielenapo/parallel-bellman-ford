@@ -34,9 +34,7 @@ Graph* createGraph(int V) {
     return graph;
 }
 
-void generateRandomGraph(Graph* graph) {
-    srand(time(0)); // Use current time as seed for random generator
-
+void generateRandomGraph(Graph* graph) {    
     for (int i = 0; i < graph->E; i++) {
         do {
             graph->edge[i].u = rand() % graph->V;
@@ -53,51 +51,13 @@ void display(int arr[], int size);
 // ----------------------- MAIN --------------------------//
 int main(void) {
     //create random graph
-    //int totalVertices = 4; // Set the total number of vertices
-    //Graph* g = createGraph(totalVertices);
-    //generateRandomGraph(g);
-    //create graph
-    struct Graph *g = (struct Graph *)malloc(sizeof(struct Graph));
-    g->V = 4;  //total vertices
-    g->E = 5;  //total edges
-    //array of edges for graph
-    g->edge = (struct Edge *)malloc(g->E * sizeof(struct Edge));
+    int totalVertices = 1500; // Set the total number of vertices
+    // set seed for rand() to get same graph every time
+    srand(42);
+    Graph* g = createGraph(totalVertices);
+    generateRandomGraph(g);
 
-    //------- adding the edges of the graph
-    /*
-      edge(u, v)
-      where 	u = start vertex of the edge (u,v)
-          v = end vertex of the edge (u,v)
-      
-      w is the weight of the edge (u,v)
-    */
-
-
-    //edge 0 --> 1
-    g->edge[0].u = 0;
-    g->edge[0].v = 1;
-    g->edge[0].w = 5;
-
-    //edge 0 --> 2
-    g->edge[1].u = 0;
-    g->edge[1].v = 2;
-    g->edge[1].w = 4;
-
-    //edge 1 --> 3
-    g->edge[2].u = 1;
-    g->edge[2].v = 3;
-    g->edge[2].w = 3;
-
-    //edge 2 --> 1
-    g->edge[3].u = 2;
-    g->edge[3].v = 1;
-    g->edge[3].w = 6;
-
-    //edge 3 --> 2
-    g->edge[4].u = 3;
-    g->edge[4].v = 2;
-    g->edge[4].w = 2;
-
+    omp_set_num_threads(12);
 
     //run algorithm
     double tstart, tstop;
@@ -106,6 +66,7 @@ int main(void) {
     tstop = omp_get_wtime();
 
     printf("Elapsed time %f\n", tstop - tstart);
+    printf("Number of threads %d\n", omp_get_max_threads());
     return 0;
 }
 
@@ -159,6 +120,8 @@ void bellmanford(struct Graph *g, int source) {
   //step 3: detect negative cycle
   //if value changes then we have a negative cycle in the graph
   //and we cannot find the shortest distances
+  int negative_cycle_detected = 0;
+
   #pragma omp parallel for private(u, v, w)
   for (i = 0; i < tE; i++) {
     u = g->edge[i].u;
@@ -166,9 +129,13 @@ void bellmanford(struct Graph *g, int source) {
     w = g->edge[i].w;
     if (d[u] != INFINITY && d[v] > d[u] + w) {
       printf("Negative weight cycle detected!\n");
-      return;
+      negative_cycle_detected = 1;
     }
   }
+
+  if (negative_cycle_detected) {
+  return;
+}
 
   //No negative weight cycle found!
   //print the distance and predecessor array
