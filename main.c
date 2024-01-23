@@ -25,26 +25,56 @@ typedef struct Graph {
 
 
 // ------------------------ CREATE GRAPH -------------------------- //
-Graph* createGraph(int V) {
+Graph* createGraph(int V, int E) {
     Graph* graph = (Graph*) malloc(sizeof(Graph));
     graph->V = V;
-    graph->E = V * (V - 1);
+    graph->E = E;
     graph->edge = (Edge*) malloc(graph->E * sizeof(Edge));
 
     return graph;
 }
 
-void generateRandomGraph(Graph* graph) {
-    srand(time(0)); // Use current time as seed for random generator
-
-    for (int i = 0; i < graph->E; i++) {
-        do {
-            graph->edge[i].u = rand() % graph->V;
-            graph->edge[i].v = rand() % graph->V;
-        } while(graph->edge[i].u == graph->edge[i].v); // Ensure u != v to prevent self-loops
-
-        graph->edge[i].w = rand() % 100 + 1; // Random weight between 1 and 100
+Graph* readGraph( char* filename) {
+    FILE *file = fopen(filename, "r");
+    if (file == NULL){
+        printf("Could not open file for reading\n");
+        return NULL;
     }
+
+    int V;
+    fscanf(file, "%d\n", &V);
+
+    int E = 0;
+    int u, v, w;
+    //count total number of edges
+    while (fscanf(file, "%d:", &u) != EOF) {
+        while (fscanf(file, "%d,%d;", &v, &w) == 2) {
+            E++;
+        }
+        fscanf(file, "\n");
+    }
+
+    Graph* graph = createGraph(V, E);
+
+    rewind(file);
+    fscanf(file, "%d\n", &V);
+
+    int i = 0;
+    while (fscanf(file, "%d:", &u) != EOF) {
+        while (fscanf(file, "%d,%d;", &v, &w) == 2) {
+            graph->edge[i].u = u;
+            graph->edge[i].v = v;
+            graph->edge[i].w = w;
+            i++;
+        }
+        fscanf(file, "\n");
+    }
+
+    fclose(file);
+
+    printf("Graph created with %d vertices and %d edges\n", graph->V, graph->E); 
+
+    return graph;
 }
 
 void bellmanford(struct Graph *g, int source);
@@ -53,17 +83,15 @@ void display(int arr[], int size);
 // ----------------------- MAIN --------------------------//
 int main(void) {
     //create random graph
-    int totalVertices = 4; // Set the total number of vertices
-    Graph* g = createGraph(totalVertices);
-    generateRandomGraph(g);
+    Graph* g = readGraph("graph.txt");
 
     //run algorithm
     double tstart, tstop;
-    tstart = omp_get_wtime();
+    //tstart = omp_get_wtime();
     bellmanford(g, 0);  //0 is the source vertex
-    tstop = omp_get_wtime();
+    //tstop = omp_get_wtime();
 
-    printf("Elapsed time %f\n", tstop - tstart);
+    //printf("Elapsed time %f\n", tstop - tstart);
     return 0;
 }
 
