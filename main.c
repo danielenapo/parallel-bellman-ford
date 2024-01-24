@@ -1,11 +1,10 @@
 // Bellman Ford Algorithm in C
 // taken originally from https://www.programiz.com/dsa/bellman-ford-algorithm#google_vignette
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <omp.h>
-
+#include <string.h>
 
 #define INFINITY 99999
 
@@ -41,38 +40,39 @@ Graph* readGraph( char* filename) {
         return NULL;
     }
 
-    int V;
+    int V, E;
+    fscanf(file, "%d\n", &E);
     fscanf(file, "%d\n", &V);
+    printf("Edges: %d, Weights: %d\n", E,V);
 
-    int E = 0;
     int u, v, w;
-    //count total number of edges
-    while (fscanf(file, "%d:", &u) != EOF) {
-        while (fscanf(file, "%d,%d;", &v, &w) == 2) {
-            E++;
-        }
-        fscanf(file, "\n");
-    }
-
     Graph* graph = createGraph(V, E);
-
-    rewind(file);
-    fscanf(file, "%d\n", &V);
-
     int i = 0;
-    while (fscanf(file, "%d:", &u) != EOF) {
-        while (fscanf(file, "%d,%d;", &v, &w) == 2) {
-            graph->edge[i].u = u;
-            graph->edge[i].v = v;
-            graph->edge[i].w = w;
-            i++;
-        }
-        fscanf(file, "\n");
-    }
+    char line[2048];
+    char* token;
 
+    while(fgets(line, sizeof(line), file) != NULL){
+      token = strtok(line, ":");
+      u = atoi(token);
+
+      while((token = strtok(NULL, ";")) != NULL){
+        sscanf(token, "%d,%d", &v, &w);
+        if (i!=0 && (v == graph->edge[i-1].v && u== graph->edge[i-1].u)){
+          continue;
+        }
+        graph->edge[i].u = u;
+        graph->edge[i].v = v;
+        graph->edge[i].w = w;
+        i++;
+      }
+    }
     fclose(file);
 
-    printf("Graph created with %d vertices and %d edges\n", graph->V, graph->E); 
+    //print graph for debugging
+    printf("\n\nGRAPH:\n");
+    for (i = 0; i < E; i++) {
+      printf("%d -> %d (%d)\n", graph->edge[i].u, graph->edge[i].v, graph->edge[i].w);
+    }
 
     return graph;
 }
@@ -84,18 +84,14 @@ void display(int arr[], int size);
 int main(void) {
     //create random graph
     Graph* g = readGraph("graph.txt");
-
     //run algorithm
     double tstart, tstop;
     //tstart = omp_get_wtime();
     bellmanford(g, 0);  //0 is the source vertex
     //tstop = omp_get_wtime();
-
     //printf("Elapsed time %f\n", tstop - tstart);
     return 0;
 }
-
-
 // ------------------------- ALGORITHM --------------------//
 void bellmanford(struct Graph *g, int source) {
   //variables
@@ -164,7 +160,12 @@ void bellmanford(struct Graph *g, int source) {
 void display(int arr[], int size) {
   int i;
   for (i = 0; i < size; i++) {
-    printf("%d ", arr[i]);
+    if(arr[i] == INFINITY){
+      printf("INF ");
+    }
+    else{
+      printf("%d ", arr[i]);
+    }
   }
   printf("\n");
 }
