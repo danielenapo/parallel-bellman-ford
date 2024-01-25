@@ -1,9 +1,12 @@
+// originally taken from: https://www.sanfoundry.com/c-program-generate-random-undirected-graph-given-number-edges/
+// modified to also generate weights
+
 #include<stdio.h>
 #include<stdlib.h>
 #include <time.h>
  
-#define MAX_VERTICES 1000
-#define MAX_EDGES 100 //for each vertex
+#define MAX_VERTICES 5000
+#define MAX_EDGES 1000 //for each vertex
 #define SEED 42
 #define MAX_WEIGHT 50 //max POSITIVE weight value of an edge
 #define MIN_WEIGHT 1 //min weight value of an edge
@@ -60,7 +63,6 @@ int main(){
     vertexCounter = 0;edgeCounter = 0;
     for (vertexCounter = 0; vertexCounter < numberOfVertices; vertexCounter++){ //loop over vertices
         fprintf(file, "%d:",vertexCounter);
-        printf("%d:\t",vertexCounter);
         int *connected = calloc(numberOfVertices, sizeof(int)); // Initialize all to 0
 
         for (edgeCounter=0; edgeCounter < maxNumberOfEdges; edgeCounter++){ //loop over edges
@@ -75,7 +77,6 @@ int main(){
                 graph[vertexCounter][edgeCounter] = *graph[linkedVertex];
                 weights[vertexCounter][edgeCounter] = rand() % MAX_WEIGHT + MIN_WEIGHT;
                 fprintf(file, "%d,%d;", linkedVertex, weights[vertexCounter][edgeCounter]);
-                printf("%d,%d; ", linkedVertex, weights[vertexCounter][edgeCounter]);
                 totEdges++;
             }
             else{
@@ -86,7 +87,6 @@ int main(){
         free(connected); // Free the memory allocated for the array
 
         fprintf(file, "\n");
-        printf("\n");
     }
     fclose(file);
     printf("Total number of edges: %d\n", totEdges);
@@ -113,6 +113,8 @@ int main(){
 
     // Delete the original file and rename the new file to the original file's name
     remove("graph.txt");
-    rename("temp.txt", "graph.txt");
+    char filename[50]; 
+    sprintf(filename, "graph_%d.txt", numberOfVertices);
+    rename("temp.txt", filename);
     return 1;
 }

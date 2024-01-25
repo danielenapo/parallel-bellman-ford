@@ -68,11 +68,11 @@ Graph* readGraph( char* filename) {
     }
     fclose(file);
 
-    //print graph for debugging
+    /*//print graph for debugging
     printf("\n\nGRAPH:\n");
     for (i = 0; i < E; i++) {
       printf("%d -> %d (%d)\n", graph->edge[i].u, graph->edge[i].v, graph->edge[i].w);
-    }
+    }*/
 
     return graph;
 }
@@ -83,7 +83,7 @@ void display(int arr[], int size);
 // ----------------------- MAIN --------------------------//
 int main(void) {
     //create random graph
-    Graph* g = readGraph("graph.txt");
+    Graph* g = readGraph("graph_5.txt");
     //run algorithm
     double tstart, tstop;
     //tstart = omp_get_wtime();

@@ -1,13 +1,15 @@
 // Bellman Ford Algorithm in C
 // taken originally from https://www.programiz.com/dsa/bellman-ford-algorithm#google_vignette
-
+// gcc -fopenmp omp_version.c -o omp
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <omp.h>
+#include <string.h>
 
 
 #define INFINITY 99999
+#define OMP_NUM_THREADS 1
 
 //struct for the edges of the graph
 typedef struct Edge {
@@ -24,71 +26,80 @@ typedef struct Graph {
 }Graph;
 
 
-// ----------------- GENERATE RANDOM GRAPH ---------------------- //
-Graph* createGraph(int V) {
+// ------------------------ CREATE GRAPH -------------------------- //
+Graph* createGraph(int V, int E) {
     Graph* graph = (Graph*) malloc(sizeof(Graph));
     graph->V = V;
-    graph->E = V * (V - 1);
+    graph->E = E;
     graph->edge = (Edge*) malloc(graph->E * sizeof(Edge));
 
     return graph;
 }
 
-void generateRandomGraph(Graph* graph) {
-    // Create a matrix to keep track of the generated edges
-    int** edges = (int**)malloc(graph->V * sizeof(int*));
-    for (int i = 0; i < graph->V; i++) {
-        edges[i] = (int*)calloc(graph->V, sizeof(int));
+Graph* readGraph( char* filename) {
+    FILE *file = fopen(filename, "r");
+    if (file == NULL){
+        printf("Could not open file for reading\n");
+        return NULL;
     }
 
-    for (int i = 0; i < graph->E; i++) {
-        do {
-            graph->edge[i].u = rand() % graph->V;
-            graph->edge[i].v = rand() % graph->V;
-        } while(graph->edge[i].u == graph->edge[i].v || edges[graph->edge[i].u][graph->edge[i].v]); // Ensure u != v and the edge has not been generated before
+    int V, E;
+    fscanf(file, "%d\n", &E);
+    fscanf(file, "%d\n", &V);
+    printf("Edges: %d, Weights: %d\n", E,V);
 
-        // Mark the edge as generated
-        edges[graph->edge[i].u][graph->edge[i].v] = 1;
+    int u, v, w;
+    Graph* graph = createGraph(V, E);
+    int i = 0;
+    char line[2048];
+    char* token;
 
-        graph->edge[i].w = rand() % 101 - 15; 
+    while(fgets(line, sizeof(line), file) != NULL){
+      token = strtok(line, ":");
+      u = atoi(token);
+
+      while((token = strtok(NULL, ";")) != NULL){
+        sscanf(token, "%d,%d", &v, &w);
+        if (i!=0 && (v == graph->edge[i-1].v && u== graph->edge[i-1].u)){
+          continue;
+        }
+        graph->edge[i].u = u;
+        graph->edge[i].v = v;
+        graph->edge[i].w = w;
+        i++;
+      }
     }
-
-    // Free the memory allocated for the matrix
-    for (int i = 0; i < graph->V; i++) {
-        free(edges[i]);
-    }
-    free(edges);
+    fclose(file);
+    return graph;
 }
+
 
 void bellmanford(struct Graph *g, int source);
 void display(int arr[], int size);
 
 // ----------------------- MAIN --------------------------//
-int main(void) {
-    //create random graph
-    int totalVertices = 5; // Set the total number of vertices
-    // set seed for rand() to get same graph every time
-    srand(42);
-    Graph* g = createGraph(totalVertices);
-    generateRandomGraph(g);
-    //print the graph
-    printf("Graph:\n");
-    for (int i = 0; i < g->E; i++) {
-        printf("%d -> %d (weight: %d)\n", g->edge[i].u, g->edge[i].v, g->edge[i].w);
-    }
+int main(int argc, char *argv[]) {
+  //read vertices num from cmd call
+  if (argc != 2) {
+    fprintf(stderr, "Usage: %s <number of vertices>\n", argv[0]);
+    return 1;
+  }
+  char filename[50];
+  int arg = atoi(argv[1]);
+  sprintf(filename, "graph_%d.txt", arg);
+  Graph* g = readGraph(filename);
 
+  omp_set_num_threads(OMP_NUM_THREADS);
 
-    omp_set_num_threads(12);
+  //run algorithm
+  double tstart, tstop;
+  tstart = omp_get_wtime();
+  bellmanford(g, 0);  //0 is the source vertex
+  tstop = omp_get_wtime();
 
-    //run algorithm
-    double tstart, tstop;
-    tstart = omp_get_wtime();
-    bellmanford(g, 0);  //0 is the source vertex
-    tstop = omp_get_wtime();
-
-    printf("Elapsed time %f\n", tstop - tstart);
-    printf("Number of threads %d\n", omp_get_max_threads());
-    return 0;
+  printf("Elapsed time %f\n", tstop - tstart);
+  printf("Number of threads %d\n", omp_get_max_threads());
+  return 0;
 }
 
 
@@ -112,7 +123,7 @@ void bellmanford(struct Graph *g, int source) {
   int p[tV];
 
   //step 1: fill the distance array and predecessor array
-  #pragma omp parallel for
+  #pragma omp parallel for private(i)
   for (i = 0; i < tV; i++) {
     d[i] = INFINITY;
     p[i] = 0;
@@ -124,7 +135,7 @@ void bellmanford(struct Graph *g, int source) {
   //PART TO PARALLELIZE!!
   //step 2: relax edges |V| - 1 times
   for (i = 1; i <= tV - 1; i++) { 
-    #pragma omp parallel for private(j, u, v, w) shared(d, p) schedule(dynamic)
+    #pragma omp parallel for private(u, v, w, j) shared(d, p)
     for (j = 0; j < tE; j++) {
       //get the edge data
       u = g->edge[j].u; //start
@@ -143,7 +154,7 @@ void bellmanford(struct Graph *g, int source) {
   //and we cannot find the shortest distances
   int negative_cycle_detected = 0;
 
-  #pragma omp parallel for private(u, v, w)
+  #pragma omp parallel for private(u, v, w, i)
   for (i = 0; i < tE; i++) {
     u = g->edge[i].u;
     v = g->edge[i].v;
