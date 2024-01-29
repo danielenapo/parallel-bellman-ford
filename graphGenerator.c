@@ -5,18 +5,21 @@
 #include<stdlib.h>
 #include <time.h>
  
-#define MAX_VERTICES 5000
-#define MAX_EDGES 1000 //for each vertex
 #define SEED 42
 #define MAX_WEIGHT 50 //max POSITIVE weight value of an edge
 #define MIN_WEIGHT 1 //min weight value of an edge
  
 typedef unsigned char vertex;
  
-int main(){
+int main(int argc, char *argv[]) {
+    //read vertices num from cmd call
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <number of vertices>\n", argv[0]);
+        return 1;
+    }
+    int numberOfVertices = atoi(argv[1]);
+    int maxNumberOfEdges = numberOfVertices/2;
     srand(SEED);
-    int numberOfVertices = MAX_VERTICES;
-    int maxNumberOfEdges = MAX_EDGES;
     if( numberOfVertices == 0)
         numberOfVertices++;
     vertex ***graph;
@@ -114,7 +117,7 @@ int main(){
     // Delete the original file and rename the new file to the original file's name
     remove("graph.txt");
     char filename[50]; 
-    sprintf(filename, "graph_%d.txt", numberOfVertices);
+    sprintf(filename, "graphs/graph_%d.txt", numberOfVertices);
     rename("temp.txt", filename);
     return 1;
 }

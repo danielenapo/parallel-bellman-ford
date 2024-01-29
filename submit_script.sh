@@ -8,6 +8,6 @@
 #SBATCH --output=out
 #SBATCH --gres=gpu:1
 
-gcc -fopenmp omp_version.c -o omp
+nvcc cuda_version.cu -o cuda
 
-./omp
+./cuda 5000

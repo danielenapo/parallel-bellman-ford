@@ -9,7 +9,7 @@
 
 
 #define INFINITY 99999
-#define OMP_NUM_THREADS 1
+#define OMP_NUM_THREADS 12
 
 //struct for the edges of the graph
 typedef struct Edge {
@@ -86,19 +86,29 @@ int main(int argc, char *argv[]) {
   }
   char filename[50];
   int arg = atoi(argv[1]);
-  sprintf(filename, "graph_%d.txt", arg);
+  sprintf(filename, "graphs/graph_%d.txt", arg);
   Graph* g = readGraph(filename);
 
-  omp_set_num_threads(OMP_NUM_THREADS);
+  double elapsed_time[2];
 
   //run algorithm
-  double tstart, tstop;
-  tstart = omp_get_wtime();
-  bellmanford(g, 0);  //0 is the source vertex
-  tstop = omp_get_wtime();
-
-  printf("Elapsed time %f\n", tstop - tstart);
-  printf("Number of threads %d\n", omp_get_max_threads());
+  for (int c=0; c<2; c++){
+    if (c==0){ //first loop is parallel
+      omp_set_num_threads(OMP_NUM_THREADS); 
+    }
+    else{ //second loop is sequential
+      omp_set_num_threads(1);
+    }
+    double tstart, tstop;
+    tstart = omp_get_wtime();
+    bellmanford(g, 0);  //0 is the source vertex
+    tstop = omp_get_wtime();
+    elapsed_time[c] = tstop - tstart;
+    printf("%d THREAD: \n", omp_get_max_threads());
+    printf("Elapsed time %f\n", elapsed_time[c]);
+    printf("-------------------\n");
+  }
+  printf("SPEEDUP: %f\n", elapsed_time[1]/elapsed_time[0]);
   return 0;
 }
 
@@ -171,10 +181,10 @@ void bellmanford(struct Graph *g, int source) {
 
   //No negative weight cycle found!
   //print the distance and predecessor array
-  printf("Distance array: ");
-  display(d, tV);
-  printf("Predecessor array: ");
-  display(p, tV);
+  //printf("Distance array: ");
+  //display(d, tV);
+  //printf("Predecessor array: ");
+  //display(p, tV);
 }
 
 void display(int arr[], int size) {
