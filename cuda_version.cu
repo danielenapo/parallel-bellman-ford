@@ -8,10 +8,6 @@
 #include <cuda_runtime.h>
 #include <string.h>
 
-
-#define INFINITY 99999
-#define OMP_NUM_THREADS 12
-
 //struct for the edges of the graph
 typedef struct Edge {
   int u;  //start vertex of the edge
@@ -90,7 +86,7 @@ int main(int argc, char *argv[]) {
   sprintf(filename, "graphs/graph_%d.txt", arg);
   Graph* g = readGraph(filename);
 
-  float elapsed_time[2];
+  float elapsed_time;
   cudaEvent_t start, stop;
 
   // Create CUDA events for timing
@@ -98,31 +94,16 @@ int main(int argc, char *argv[]) {
   cudaEventCreate(&stop);
 
   //run algorithm
-  for (int c=0; c<2; c++){
-    if (c==0){ //first loop is parallel
-      // CUDA version of Bellman-Ford
-      cudaEventRecord(start, 0);
-      bellmanford_cuda(g, 0);  //0 is the source vertex
-      cudaEventRecord(stop, 0);
-      cudaEventSynchronize(stop);
-      cudaEventElapsedTime(&elapsed_time[c], start, stop);
-      printf("CUDA version: \n");
-      printf("Elapsed time %f ms\n", elapsed_time[c]/1000); //show in seconds
-      printf("-------------------\n");
-    }
-    else{ //second loop is sequential
-      // Original version of Bellman-Ford
-      cudaEventRecord(start, 0);
-      bellmanford(g, 0);  //0 is the source vertex
-      cudaEventRecord(stop, 0);
-      cudaEventSynchronize(stop);
-      cudaEventElapsedTime(&elapsed_time[c], start, stop);
-      printf("Sequential version: \n");
-      printf("Elapsed time %f ms\n", elapsed_time[c]/1000); //show in seconds
-      printf("-------------------\n");
-    }
-  }
-  printf("SPEEDUP: %f\n", elapsed_time[1]/elapsed_time[0]);
+  cudaEventRecord(start, 0);
+  bellmanford(g, 0);  //0 is the source vertex
+  cudaEventRecord(stop, 0);
+  cudaEventSynchronize(stop);
+  cudaEventElapsedTime(&elapsed_time, start, stop);
+  printf("CUDA version: \n");
+  printf("Elapsed time %f seconds\n", elapsed_time/1000); //show in seconds
+  printf("-------------------\n");
+    
+
 
   // Destroy CUDA events
   cudaEventDestroy(start);
@@ -169,7 +150,7 @@ void bellmanford(struct Graph *g, int source) {
     initialize<<<(tV + 255) / 256, 256>>>(d, p, tV, source);
 
     for (int i = 1; i <= tV - 1; i++) {
-        relax<<<(tE + 255) / 256, 256>>>(edges, d, p, tE);
+        relax<<<(tE + 255) / 256, 256>>>(edges, d, p, tE); //CUDA kernel call from host
         cudaDeviceSynchronize();
     }
 
