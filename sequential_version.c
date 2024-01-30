@@ -1,15 +1,12 @@
 // Bellman Ford Algorithm in C
 // taken originally from https://www.programiz.com/dsa/bellman-ford-algorithm#google_vignette
-// gcc -fopenmp omp_version.c -o omp
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <omp.h>
 #include <string.h>
 
-
 #define INFINITY 99999
-#define OMP_NUM_THREADS 12
 
 //struct for the edges of the graph
 typedef struct Edge {
@@ -70,9 +67,15 @@ Graph* readGraph( char* filename) {
       }
     }
     fclose(file);
+
+    /*//print graph for debugging
+    printf("\n\nGRAPH:\n");
+    for (i = 0; i < E; i++) {
+      printf("%d -> %d (%d)\n", graph->edge[i].u, graph->edge[i].v, graph->edge[i].w);
+    }*/
+
     return graph;
 }
-
 
 void bellmanford(struct Graph *g, int source);
 void display(int arr[], int size);
@@ -86,34 +89,18 @@ int main(int argc, char *argv[]) {
   }
   char filename[50];
   int arg = atoi(argv[1]);
-  sprintf(filename, "graphs/graph_%d.txt", arg);
+  sprintf(filename, "graphs/graph_%d.txt", arg);    
   Graph* g = readGraph(filename);
 
-  double elapsed_time[2];
-
   //run algorithm
-  for (int c=0; c<2; c++){
-    if (c==0){ //first loop is parallel
-      omp_set_num_threads(OMP_NUM_THREADS); 
-    }
-    else{ //second loop is sequential
-      omp_set_num_threads(1);
-    }
-    double tstart, tstop;
-    tstart = omp_get_wtime();
-    bellmanford(g, 0);  //0 is the source vertex
-    tstop = omp_get_wtime();
-    elapsed_time[c] = tstop - tstart;
-    printf("%d THREAD: \n", omp_get_max_threads());
-    printf("Elapsed time %f\n", elapsed_time[c]);
-    printf("-------------------\n");
-  }
-  printf("SPEEDUP: %f\n", elapsed_time[1]/elapsed_time[0]);
+  double tstart, tstop;
+  //tstart = omp_get_wtime();
+  bellmanford(g, 0);  //0 is the source vertex
+  //tstop = omp_get_wtime();
+  //printf("Elapsed time %f\n", tstop - tstart);
   return 0;
 }
-
-
-// ------------------- ALGORITHM ---------------------//
+// ------------------------- ALGORITHM --------------------//
 void bellmanford(struct Graph *g, int source) {
   //variables
   int i, j, u, v, w;
@@ -133,7 +120,6 @@ void bellmanford(struct Graph *g, int source) {
   int p[tV];
 
   //step 1: fill the distance array and predecessor array
-  #pragma omp parallel for private(i)
   for (i = 0; i < tV; i++) {
     d[i] = INFINITY;
     p[i] = 0;
@@ -144,8 +130,7 @@ void bellmanford(struct Graph *g, int source) {
 
   //PART TO PARALLELIZE!!
   //step 2: relax edges |V| - 1 times
-  for (i = 1; i <= tV - 1; i++) { 
-    #pragma omp parallel for private(u, v, w, j) shared(d, p)
+  for (i = 1; i <= tV - 1; i++) {
     for (j = 0; j < tE; j++) {
       //get the edge data
       u = g->edge[j].u; //start
@@ -162,22 +147,15 @@ void bellmanford(struct Graph *g, int source) {
   //step 3: detect negative cycle
   //if value changes then we have a negative cycle in the graph
   //and we cannot find the shortest distances
-  int negative_cycle_detected = 0;
-
-  #pragma omp parallel for private(u, v, w, i)
   for (i = 0; i < tE; i++) {
     u = g->edge[i].u;
     v = g->edge[i].v;
     w = g->edge[i].w;
     if (d[u] != INFINITY && d[v] > d[u] + w) {
       printf("Negative weight cycle detected!\n");
-      negative_cycle_detected = 1;
+      return;
     }
   }
-
-  if (negative_cycle_detected) {
-  return;
-}
 
   //No negative weight cycle found!
   //print the distance and predecessor array
@@ -190,7 +168,12 @@ void bellmanford(struct Graph *g, int source) {
 void display(int arr[], int size) {
   int i;
   for (i = 0; i < size; i++) {
-    printf("%d ", arr[i]);
+    if(arr[i] == INFINITY){
+      printf("INF ");
+    }
+    else{
+      printf("%d ", arr[i]);
+    }
   }
   printf("\n");
 }

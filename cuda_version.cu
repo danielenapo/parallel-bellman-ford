@@ -9,6 +9,7 @@
 #include <string.h>
 
 #define INF 99999
+#define BLKDIM 256
 
 //struct for the edges of the graph
 typedef struct Edge {
@@ -45,7 +46,7 @@ Graph* readGraph( char* filename) {
     int V, E;
     fscanf(file, "%d\n", &E);
     fscanf(file, "%d\n", &V);
-    printf("Edges: %d, Weights: %d\n", E,V);
+    printf("Edges: %d, Vertices: %d\n", E,V);
 
     int u, v, w;
     Graph* graph = createGraph(V, E);
@@ -104,8 +105,6 @@ int main(int argc, char *argv[]) {
   printf("CUDA version: \n");
   printf("Elapsed time %f seconds\n", elapsed_time/1000); //show in seconds
   printf("-------------------\n");
-    
-
 
   // Destroy CUDA events
   cudaEventDestroy(start);
@@ -150,11 +149,12 @@ void bellmanford(struct Graph *g, int source) {
     cudaMalloc(&edges, tE * sizeof(struct Edge));
     cudaMemcpy(edges, g->edge, tE * sizeof(struct Edge), cudaMemcpyHostToDevice);
 
-    initialize<<<(tE+255)/255, 256>>>(d, p, tV, source);
+    initialize<<<(tV+BLKDIM-1)/BLKDIM, BLKDIM>>>(d, p, tV, source);
+    cudaDeviceSynchronize();
 
     //relaxation phase
     for (int i = 1; i <= tV - 1; i++) {
-        relax<<<(tV+255)/256,256>>>(edges, d, p, tE); //CUDA kernel call from host
+        relax<<<(tE+BLKDIM-1)/BLKDIM,BLKDIM>>>(edges, d, p, tE); //CUDA kernel call from host
         cudaDeviceSynchronize();
     }
 
@@ -192,7 +192,12 @@ void bellmanford(struct Graph *g, int source) {
 void display(int arr[], int size) {
   int i;
   for (i = 0; i < size; i++) {
-    printf("%d ", arr[i]);
+    if(arr[i] == INF){
+      printf("INF ");
+    }
+    else{
+      printf("%d ", arr[i]);
+    }
   }
   printf("\n");
 }
