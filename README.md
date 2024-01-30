@@ -27,4 +27,3 @@ To run the CUDA version (inside the Unibo SLURM environment), just run this scri
 sbatch submit_script.sh
 ```
 The results will be printed in the file _"out"_.<br>
-To change the number of vertices
