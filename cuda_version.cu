@@ -8,6 +8,8 @@
 #include <cuda_runtime.h>
 #include <string.h>
 
+#define INF 99999
+
 //struct for the edges of the graph
 typedef struct Edge {
   int u;  //start vertex of the edge
@@ -115,7 +117,7 @@ int main(int argc, char *argv[]) {
 __global__ void initialize(int *d, int *p, int tV, int source) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i < tV) {
-        d[i] = (i == source) ? 0 : INFINITY;
+        d[i] = (i == source) ? 0 : INF;
         p[i] = 0;
     }
 }
@@ -127,7 +129,8 @@ __global__ void relax(struct Edge *edges, int *d, int *p, int tE) {
         int u = edges[j].u;
         int v = edges[j].v;
         int w = edges[j].w;
-        if (d[u] != INFINITY && d[v] > d[u] + w) {
+        //printf("u: %d, v: %d, w: %d d[u]: %d\n", u, v, w, d[u]);
+        if (d[u] != INF && d[v] > d[u] + w) {
             d[v] = d[u] + w;
             p[v] = u;
         }
@@ -147,13 +150,15 @@ void bellmanford(struct Graph *g, int source) {
     cudaMalloc(&edges, tE * sizeof(struct Edge));
     cudaMemcpy(edges, g->edge, tE * sizeof(struct Edge), cudaMemcpyHostToDevice);
 
-    initialize<<<(tV + 255) / 256, 256>>>(d, p, tV, source);
+    initialize<<<(tE+255)/255, 256>>>(d, p, tV, source);
 
+    //relaxation phase
     for (int i = 1; i <= tV - 1; i++) {
-        relax<<<(tE + 255) / 256, 256>>>(edges, d, p, tE); //CUDA kernel call from host
+        relax<<<(tV+255)/256,256>>>(edges, d, p, tE); //CUDA kernel call from host
         cudaDeviceSynchronize();
     }
 
+    //copying d and p from device to host
     int *h_d = (int*)malloc(tV * sizeof(int));
     int *h_p = (int*)malloc(tV * sizeof(int));
     cudaMemcpy(h_d, d, tV * sizeof(int), cudaMemcpyDeviceToHost);
@@ -163,11 +168,19 @@ void bellmanford(struct Graph *g, int source) {
         int u = g->edge[i].u;
         int v = g->edge[i].v;
         int w = g->edge[i].w;
-        if (h_d[u] != INFINITY && h_d[v] > h_d[u] + w) {
+        if (h_d[u] != INF && h_d[v] > h_d[u] + w) {
             printf("Negative weight cycle detected!\n");
             break;
         }
     }
+
+    // Call display to show the values of d and p
+    printf("Values of d:\n");
+    display(h_d, tV);
+    printf("Values of p:\n");
+    display(h_p, tV);
+
+
 
     cudaFree(d);
     cudaFree(p);
