@@ -1,0 +1,24 @@
+Edges: 24997526, Vertices: 10000
+CUDA version: 
+Elapsed time 5.407347 seconds
+-------------------
+Edges: 249562, Vertices: 1000
+CUDA version: 
+Elapsed time 0.091636 seconds
+-------------------
+Edges: 2523, Vertices: 100
+CUDA version: 
+Elapsed time 0.076869 seconds
+-------------------
+Edges: 24, Vertices: 10
+CUDA version: 
+Elapsed time 0.074836 seconds
+-------------------
+Edges: 6250107, Vertices: 5000
+CUDA version: 
+Elapsed time 0.782805 seconds
+-------------------
+Edges: 62490, Vertices: 500
+CUDA version: 
+Elapsed time 0.083985 seconds
+-------------------
