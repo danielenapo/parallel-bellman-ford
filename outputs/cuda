@@ -1,0 +1,39 @@
+PARALLEL VERSION 0
+Edges: 249562, Vertices: 1000
+max cuda threads: 249600
+Elapsed time 0.216629 seconds
+-------------------
+Edges: 2523, Vertices: 100
+max cuda threads: 2560
+Elapsed time 0.093939 seconds
+-------------------
+Edges: 24, Vertices: 10
+max cuda threads: 256
+Elapsed time 0.088326 seconds
+-------------------
+Edges: 6250107, Vertices: 5000
+max cuda threads: 6250240
+Elapsed time 0.791920 seconds
+-------------------
+Edges: 62490, Vertices: 500
+max cuda threads: 62720
+Elapsed time 0.099112 seconds
+-------------------
+PARALLEL VERSION 1
+Edges: 249562, Vertices: 1000
+max cuda threads: 249600
+Elapsed time 33.188602 seconds
+-------------------
+Edges: 2523, Vertices: 100
+max cuda threads: 2560
+Elapsed time 0.121156 seconds
+-------------------
+Edges: 24, Vertices: 10
+max cuda threads: 256
+Elapsed time 0.085408 seconds
+-------------------
+Timeout has been reached
+Edges: 62490, Vertices: 500
+max cuda threads: 62720
+Elapsed time 4.344207 seconds
+-------------------

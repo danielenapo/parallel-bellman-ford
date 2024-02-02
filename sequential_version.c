@@ -8,6 +8,13 @@
 
 #define INFINITY 99999
 
+double gettime( void )
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts );
+    return (ts.tv_sec + (double)ts.tv_nsec / 1e9);
+}
+
 //struct for the edges of the graph
 typedef struct Edge {
   int u;  //start vertex of the edge
@@ -92,12 +99,13 @@ int main(int argc, char *argv[]) {
   sprintf(filename, "graphs/graph_%d.txt", arg);    
   Graph* g = readGraph(filename);
 
+  double elapsed_time, tstart, tstop;
+
   //run algorithm
-  double tstart, tstop;
-  //tstart = omp_get_wtime();
+  tstart=gettime();
   bellmanford(g, 0);  //0 is the source vertex
-  //tstop = omp_get_wtime();
-  //printf("Elapsed time %f\n", tstop - tstart);
+  tstop = gettime();
+  printf("Elapsed time %f\n", tstop - tstart);
   return 0;
 }
 // ------------------------- ALGORITHM --------------------//

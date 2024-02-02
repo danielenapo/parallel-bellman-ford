@@ -6,10 +6,9 @@
 #include <time.h>
 #include <omp.h>
 #include <string.h>
-
+#include <stdbool.h>
 
 #define INFINITY 99999
-#define OMP_NUM_THREADS 12
 
 //struct for the edges of the graph
 typedef struct Edge {
@@ -79,36 +78,36 @@ void display(int arr[], int size);
 
 // ----------------------- MAIN --------------------------//
 int main(int argc, char *argv[]) {
+  //debug
+  printf("max threads possible: %d\n", omp_get_max_threads());
   //read vertices num from cmd call
-  if (argc != 2) {
-    fprintf(stderr, "Usage: %s <number of vertices>\n", argv[0]);
+  if (argc != 4) {
+    fprintf(stderr, "Usage: %s <number of vertices> <number of threads> <is sequential? (bool)>\n", argv[0]);
     return 1;
   }
   char filename[50];
   int arg = atoi(argv[1]);
   sprintf(filename, "graphs/graph_%d.txt", arg);
   Graph* g = readGraph(filename);
+  int omp_num_threads= atoi(argv[2]);
+  bool is_seq = atoi(argv[3]);
 
-  double elapsed_time[2];
+
+  double elapsed_time;
 
   //run algorithm
-  for (int c=0; c<2; c++){
-    if (c==0){ //first loop is parallel
-      omp_set_num_threads(OMP_NUM_THREADS); 
-    }
-    else{ //second loop is sequential
-      omp_set_num_threads(1);
-    }
-    double tstart, tstop;
-    tstart = omp_get_wtime();
-    bellmanford(g, 0);  //0 is the source vertex
-    tstop = omp_get_wtime();
-    elapsed_time[c] = tstop - tstart;
-    printf("%d THREAD: \n", omp_get_max_threads());
-    printf("Elapsed time %f\n", elapsed_time[c]);
-    printf("-------------------\n");
-  }
-  printf("SPEEDUP: %f\n", elapsed_time[1]/elapsed_time[0]);
+  if(is_seq){omp_set_num_threads(1);}
+  else{omp_set_num_threads(omp_num_threads);}
+
+  double tstart, tstop;
+  tstart = omp_get_wtime();
+  bellmanford(g, 0);  //0 is the source vertex
+  tstop = omp_get_wtime();
+  elapsed_time = tstop - tstart;
+  printf("%d THREAD: \n", omp_get_max_threads());
+  printf("Elapsed time %f\n", elapsed_time);
+  printf("-------------------\n");
+  
   return 0;
 }
 
@@ -180,11 +179,13 @@ void bellmanford(struct Graph *g, int source) {
 }
 
   //No negative weight cycle found!
-  //print the distance and predecessor array
+  // DEBUG: print the distance and predecessor array
+  /*
   printf("Distance array: ");
   display(d, tV);
   printf("Predecessor array: ");
   display(p, tV);
+  */
 }
 
 void display(int arr[], int size) {
