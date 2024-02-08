@@ -1,10 +1,14 @@
-# generate graphs if the foder /graphs is empty
-if [ -z "$(ls -A graphs)" ]; then
-    echo generating graphs
-    gcc graphGenerator.c -o graph
-    ./graph 10
-    ./graph 100
-    ./graph 500
-    ./graph 1000
-    ./graph 5000
+# create graphs folder if it does not exist
+if [ ! -d "graphs" ]; then
+    mkdir graphs
 fi
+rm -f graphs/* # clear graphs folder before generating new graphs
+gcc graphGenerator.c -o graph #compile
+
+#iterate over the call parameters of the cmd
+for i in "$@"
+do
+    # generate graphs
+    ./graph $i
+done
+

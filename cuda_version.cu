@@ -86,29 +86,41 @@ void display(int arr[], int size);
 
 // ----------------------- MAIN --------------------------//
 int main(int argc, char *argv[]) {
-//read vertices num from cmd call
-if (argc != 3) {
-  fprintf(stderr, "Usage: %s <number of vertices> <is sequential? (bool)>\n", argv[0]);
-  return 1;
-}
-char filename[50];
-int arg = atoi(argv[1]);
-sprintf(filename, "graphs/graph_%d.txt", arg);
-Graph* g = readGraph(filename);
-bool is_seq = atoi(argv[2]);
-double elapsed_time, tstart, tstop;
+  //read vertices num from cmd call
+  if (argc != 4) {
+    fprintf(stderr, "Usage: %s <number of vertices> <is sequential? (bool)> <csv filename>\n", argv[0]);
+    return 1;
+  }
+  char filename[50];
+  int tV = atoi(argv[1]);
+  sprintf(filename, "graphs/graph_%d.txt", tV);
+  Graph* g = readGraph(filename);
+  bool is_seq = atoi(argv[2]);
+  char csv_filename[128];
+  strcpy(csv_filename, argv[3]);
+  double elapsed_time, tstart, tstop;
 
-if (is_seq){printf("max cuda threads: %d\n", ((g->E+BLKDIM-1)/BLKDIM)*BLKDIM);}
+  //if (!is_seq){printf("max cuda threads: %d\n", ((g->E+BLKDIM-1)/BLKDIM)*BLKDIM);}
 
-//run algorithm
-tstart=gettime();
-bellmanford(g, 0, is_seq);  //0 is the source vertex
-tstop=gettime();
-elapsed_time = tstop - tstart;
-printf("Elapsed time %f seconds\n", elapsed_time); //show in seconds
-printf("-------------------\n");
-
-return 0;
+  //run algorithm
+  tstart=gettime();
+  bellmanford(g, 0, is_seq);  //0 is the source vertex
+  tstop=gettime();
+  elapsed_time = tstop - tstart;
+  printf("Elapsed time %f seconds\n", elapsed_time); //show in seconds
+  printf("-------------------\n");
+  //save elapsed_time in the csv file
+  char path[1024];  
+  strcpy(path, "outputs/");
+  strcat(path, csv_filename);
+  FILE *f = fopen(path, "a");  if (f == NULL)
+  {
+      printf("Error opening csv output file!\n");
+      exit(1);
+  }
+  fprintf(f, "%d,%f,%d, %d, \n", tV , elapsed_time, g->E, is_seq);
+  fclose(f);
+  return 0;
 }
 
 // --------- MULTIPLE THREADS AND BLOCKS (parallel) ---------

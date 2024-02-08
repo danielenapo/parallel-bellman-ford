@@ -38,7 +38,7 @@ Graph* createGraph(int V, int E) {
 Graph* readGraph( char* filename) {
     FILE *file = fopen(filename, "r");
     if (file == NULL){
-        printf("Could not open file for reading\n");
+        printf("Could not open graph input file for reading\n");
         return NULL;
     }
 
@@ -70,6 +70,7 @@ Graph* readGraph( char* filename) {
     }
     fclose(file);
     return graph;
+  
 }
 
 
@@ -78,20 +79,19 @@ void display(int arr[], int size);
 
 // ----------------------- MAIN --------------------------//
 int main(int argc, char *argv[]) {
-  //debug
-  printf("max threads possible: %d\n", omp_get_max_threads());
   //read vertices num from cmd call
-  if (argc != 4) {
-    fprintf(stderr, "Usage: %s <number of vertices> <number of threads> <is sequential? (bool)>\n", argv[0]);
+  if (argc != 5) {
+    fprintf(stderr, "Usage: %s <number of vertices> <number of threads> <is sequential? (1/0)>, <csv filename>\n", argv[0]);
     return 1;
   }
   char filename[50];
-  int arg = atoi(argv[1]);
-  sprintf(filename, "graphs/graph_%d.txt", arg);
+  int tV = atoi(argv[1]);
+  sprintf(filename, "graphs/graph_%d.txt", tV);
   Graph* g = readGraph(filename);
   int omp_num_threads= atoi(argv[2]);
   bool is_seq = atoi(argv[3]);
-
+  char csv_filename[50];
+  strcpy(csv_filename, argv[4]);
 
   double elapsed_time;
 
@@ -108,43 +108,45 @@ int main(int argc, char *argv[]) {
   printf("Elapsed time %f\n", elapsed_time);
   printf("-------------------\n");
   
+  //save elapsed_time in the csv file
+  char path[1024];  
+  strcpy(path, "outputs/");
+  strcat(path, csv_filename);
+  FILE *f = fopen(path, "a");
+  if (f == NULL)
+  {
+    printf("Error opening csv output file!\n");
+    exit(1);
+  }
+  fprintf(f, "%d,%f,%d, %d, \n", tV , elapsed_time, omp_num_threads, is_seq);
+  fclose(f);
   return 0;
 }
 
 
 // ------------------- ALGORITHM ---------------------//
 void bellmanford(struct Graph *g, int source) {
-  //variables
   int i, j, u, v, w;
-
   //total vertex in the graph g
   int tV = g->V;
-
   //total edge in the graph g
   int tE = g->E;
 
-  //distance array
-  //size equal to the number of vertices of the graph g
-  int d[tV];
+  int d[tV]; //distance array
+  int p[tV]; //predecessor array
 
-  //predecessor array
-  //size equal to the number of vertices of the graph g
-  int p[tV];
-
-  //step 1: fill the distance array and predecessor array
-  #pragma omp parallel for private(i)
+  //initialization phase: fill the distance array and predecessor array
+  #pragma omp parallel for private(i) schedule(static)
   for (i = 0; i < tV; i++) {
     d[i] = INFINITY;
     p[i] = 0;
   }
-
   //mark the source vertex
   d[source] = 0;
 
-  //PART TO PARALLELIZE!!
-  //step 2: relax edges |V| - 1 times
+  //relaxation phase: relax edges |V| - 1 times
   for (i = 1; i <= tV - 1; i++) { 
-    #pragma omp parallel for private(u, v, w, j) shared(d, p)
+    #pragma omp parallel for private(u, v, w, j) shared(d, p) schedule(dynamic)
     for (j = 0; j < tE; j++) {
       //get the edge data
       u = g->edge[j].u; //start
@@ -158,12 +160,11 @@ void bellmanford(struct Graph *g, int source) {
     }
   }
 
-  //step 3: detect negative cycle
-  //if value changes then we have a negative cycle in the graph
-  //and we cannot find the shortest distances
+  //detect negative cycle
+  //if value changes then we have a negative cycle in the graph (can't find shortest path)
   int negative_cycle_detected = 0;
 
-  #pragma omp parallel for private(u, v, w, i)
+  #pragma omp parallel for private(u, v, w, i) schedule(static)
   for (i = 0; i < tE; i++) {
     u = g->edge[i].u;
     v = g->edge[i].v;
@@ -174,11 +175,8 @@ void bellmanford(struct Graph *g, int source) {
     }
   }
 
-  if (negative_cycle_detected) {
-  return;
-}
+  if (negative_cycle_detected) {return;}
 
-  //No negative weight cycle found!
   // DEBUG: print the distance and predecessor array
   /*
   printf("Distance array: ");

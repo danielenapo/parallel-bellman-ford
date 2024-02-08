@@ -12,12 +12,11 @@
 nvcc cuda_version.cu -o cuda
 # generate graphs
 chmod +x generate_graphs.sh
-./generate_graphs.sh 10 50 100 250 500 750 1000 5000
+./generate_graphs.sh 10 100 500 1000 2000 3000 4000 5000 6000 7000 8000
 # create output csv file(delete the file if it already exists)
-rm -f outputs/cuda.csv
-touch outputs/cuda.csv
+rm -f outputs/cuda_efficiency.csv
+touch outputs/cuda_efficiency.csv
 
-# two iterations: one for parallel version, one for sequential version
 for i in {0..1}
 do
     if [ $i -eq 1 ]
@@ -31,13 +30,14 @@ do
     do
         vertices=$(basename "$file" .txt | cut -d'_' -f2)
         # Run the ./cuda command with the current file (vertices number) as an argument
-        timeout 5m ./cuda "$vertices" $i "cuda.csv"
+        timeout 5m ./cuda "$vertices" $i "cuda_efficiency.csv"
         exit_status=$?
         if [ $exit_status -eq 124 ]
         then
-            echo "Timeout has been reached"
+            echo "Timeout has been reached for $vertices vertices"
+            echo "-------------------------"
         fi
     done
 done
 
-# sed -i 's/\x0D$//' submit_script.sh
+# sed -i 's/\x0D$//' *.sh
