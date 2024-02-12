@@ -5,7 +5,7 @@ import sys
 if len(sys.argv) != 2:
     print("Usage: python ./plot_outputs.py <filename>")
     sys.exit(1)
-filename = "outputs/"+sys.argv[1]+".csv"
+filename = "../outputs/"+sys.argv[1]+".csv"
 
 # Create an empty dictionary
 times_dict = {}
@@ -40,7 +40,7 @@ for vertices, times in sorted_times_dict.items():
         sorted_times_dict[vertices]['speedup'] = times['seq'] / times['parallel']
         #print(f"Vertices: {vertices}, Seq Time: {times['seq']}, Parallel Time: {times['parallel']}, Speedup: {times['speedup']}")
         #debug print to be imported in latex table (for the report)
-        print(f"{vertices} &  & {times['parallel']} & {times['seq']} & {times['speedup']} \\\\")
+        print(f"{vertices} &  & {times['parallel']:.4f} & {times['seq']:.4f} & {times['speedup']:.2f} \\\\")
 #sort the dictionary by key   
 sorted_items = sorted(times_dict.items(), key=lambda item: item[0])
 fig, axs = plt.subplots(1, 2, figsize=(10, 4))  # 1 row, 2 columns, and optional figure size
@@ -70,4 +70,5 @@ axs[1].legend()
 
 
 plt.tight_layout()  # Adjusts subplot params so that subplots are nicely fit in the figure
-plt.show()  # Displays the figure
+# save the plot in the current directory
+plt.savefig(f'./{sys.argv[1]}_speedup.png')

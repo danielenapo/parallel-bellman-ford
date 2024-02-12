@@ -12,7 +12,7 @@
 nvcc cuda_version.cu -o cuda
 # generate graphs
 chmod +x generate_graphs.sh
-./generate_graphs.sh 10 50 100 250 500 750 1000 5000
+./generate_graphs.sh 10 50 100 250 500 750 1000 #5000
 # create output csv file(delete the file if it already exists)
 rm -f outputs/cuda.csv
 touch outputs/cuda.csv

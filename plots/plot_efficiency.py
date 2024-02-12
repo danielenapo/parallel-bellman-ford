@@ -5,7 +5,7 @@ import sys
 if len(sys.argv) != 2:
     print("Usage: python ./plot_outputs.py <filename>")
     sys.exit(1)
-filename = "outputs/"+sys.argv[1]+".csv"
+filename = "../outputs/"+sys.argv[1]+"_efficiency.csv"
 
 # Create an empty dictionary
 times_dict = {}
@@ -61,5 +61,5 @@ axs[1].set_xscale('log', base=2)
 axs[1].xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: f'{x:.0f}'))
 
 plt.tight_layout()  # Adjusts subplot params so that subplots are nicely fit in the figure
-plt.show()  # Displays the figure
-
+#save the plot in the current directory 
+plt.savefig(f'./{sys.argv[1]}_efficiency.png')
